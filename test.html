@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OnvTagsInput Test</title>
+    <link rel="stylesheet" href="tagsinput.css">
+    <style>
+        body { max-width: 900px; margin: 32px auto; padding: 0 16px; font: 13px/1.6 system-ui, sans-serif; color: #1d2433; background: #fff; }
+        .ok { color: #2e7d32; }
+        .fail { color: #c0362c; font-weight: 600; }
+        #sandbox { position: absolute; left: -9999px; }
+    </style>
+</head>
+<body>
+    <h1>Cek OnvTagsInput</h1>
+    <p id="summary">Menjalankan...</p>
+    <div id="checks"></div>
+    <div id="sandbox"></div>
+
+    <script src="tagsinput.js"></script>
+    <script>
+        const MASTER = [{ value: 1, label: 'Amsterdam' }, { value: 5, label: 'Sydney' }, { value: 9, label: 'Cairo' }];
+        const box = document.getElementById('sandbox');
+        let n = 0;
+
+        function make(value) {
+            const input = document.createElement('input');
+            input.id = 't' + (++n);
+            input.value = value || '';
+            box.appendChild(input);
+            return input;
+        }
+        const field = (input) => input.parentNode.querySelector('.onvs-tagsinput-field');
+        const chips = (input) => Array.from(input.parentNode.querySelectorAll('.onvs-tagsinput-tag')).map(c => c.firstChild.textContent);
+        const key = (input, k) => field(input).dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+        function type(input, text) {
+            const f = field(input);
+            f.focus();
+            f.value = text;
+            f.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        // Tab di background tidak mengirim event blur asli; kirim manual (handler aman dipanggil dua kali)
+        function leave(input) {
+            field(input).blur();
+            field(input).dispatchEvent(new FocusEvent('blur'));
+        }
+        const wait = (ms) =>new Promise(r => setTimeout(r, ms));
+
+        // [nama cek, fungsi yang return hasil, hasil yang diharapkan]
+        const cases = [
+            ['Value awal dirapikan, duplikat dan kosong dibuang', () => { const i = make(' a, b,,a '); OnvTagsInput.init(i); return i.value; }, 'a,b'],
+            ['add / remove', () => { const i = make('a,b'); const t = OnvTagsInput.init(i); t.add('c'); t.remove('b'); return i.value; }, 'a,c'],
+            ['init dua kali = editor yang sama', () => { const i = make(); return OnvTagsInput.init(i) === OnvTagsInput.init('#' + i.id); }, true],
+            ['Bebas: ketik lalu Enter', () => { const i = make(); OnvTagsInput.init(i); type(i, 'Jakarta'); key(i, 'Enter'); return i.value; }, 'Jakarta'],
+            ['Bebas: koma jadi tag', () => { const i = make('x'); OnvTagsInput.init(i); type(i, 'Medan'); key(i, ','); return i.value; }, 'x,Medan'],
+            ['Bebas: paste "p,q,r"', () => { const i = make(); OnvTagsInput.init(i); type(i, 'p, q,r'); return i.value; }, 'p,q,r'],
+            ['Bebas: blur menyimpan teks', () => { const i = make(); OnvTagsInput.init(i); type(i, 'Bali'); leave(i); return i.value; }, 'Bali'],
+            ['Backspace di field kosong hapus tag terakhir', () => { const i = make('a,b'); OnvTagsInput.init(i); field(i).focus(); key(i, 'Backspace'); return i.value; }, 'a'],
+            ['max dipatuhi', () => { const i = make(); const t = OnvTagsInput.init(i, { max: 2 }); t.add('a'); t.add('b'); t.add('c'); return i.value; }, 'a,b'],
+            ['Label di-escape, bukan HTML', () => { const i = make(); OnvTagsInput.init(i).add('<b>x</b>'); return i.parentNode.querySelectorAll('.onvs-tagsinput-tag b').length + '|' + chips(i)[0]; }, '0|<b>x</b>'],
+            ['Event change jalan sekali per perubahan', () => { const i = make(); const t = OnvTagsInput.init(i); let c = 0; i.addEventListener('change', () => c++); t.add('a'); t.add('a'); t.setTags(['b', 'c']); return c; }, 2],
+            ['Master: value awal tampil label', () => { const i = make('5,1'); OnvTagsInput.init(i, { source: MASTER }); return chips(i).join('|'); }, 'Sydney|Amsterdam'],
+            ['Master: teks di luar daftar ditolak', () => { const i = make(); OnvTagsInput.init(i, { source: MASTER }); type(i, 'Bandung'); key(i, 'Enter'); leave(i); return i.value + '|' + field(i).value; }, '|'],
+            ['Master: cari lalu Enter = pilih', () => { const i = make(); OnvTagsInput.init(i, { source: MASTER }); type(i, 'syd'); key(i, 'Enter'); leave(i); return i.value + '|' + chips(i).join(); }, '5|Sydney'],
+            ['Master: panah bawah pilih item kedua', () => { const i = make(); OnvTagsInput.init(i, { source: MASTER }); type(i, ''); key(i, 'ArrowDown'); key(i, 'Enter'); leave(i); return i.value; }, '5'],
+            ['Master: item terpilih hilang dari daftar', () => { const i = make('1'); OnvTagsInput.init(i, { source: MASTER }); type(i, ''); const r = Array.from(i.parentNode.querySelectorAll('.onvs-tagsinput-item')).map(li => li.textContent).join(); leave(i); return r; }, 'Sydney,Cairo'],
+            ['Master: tidak ditemukan', () => { const i = make(); OnvTagsInput.init(i, { source: MASTER }); type(i, 'zzz'); const r = i.parentNode.querySelector('.onvs-tagsinput-empty').textContent; leave(i); return r; }, 'Tidak ditemukan'],
+            ['Creatable: teks baru jadi tag + getNewTags', () => { const i = make('1'); const t = OnvTagsInput.init(i, { source: MASTER, creatable: true }); type(i, 'Bandung'); key(i, 'Enter'); leave(i); return i.value + '|' + t.getNewTags().join() + '|' + i.parentNode.querySelectorAll('.onvs-tagsinput-tag-new').length; }, '1,Bandung|Bandung|1'],
+            ['Creatable: ada yang cocok = pilih dari daftar dulu', () => { const i = make(); OnvTagsInput.init(i, { source: MASTER, creatable: true }); type(i, 'syd'); key(i, 'Enter'); leave(i); return i.value; }, '5'],
+            ['Creatable: nama sama persis tidak ditawarkan "+ Tambah"', () => { const i = make(); OnvTagsInput.init(i, { source: MASTER, creatable: true }); type(i, 'cairo'); const r = i.parentNode.querySelectorAll('.onvs-tagsinput-create').length; leave(i); return r; }, 0],
+            ['Creatable: tanpa source diabaikan (tetap tag bebas)', () => { const i = make(); OnvTagsInput.init(i, { creatable: true }); type(i, 'Solo'); key(i, 'Enter'); return i.value; }, 'Solo'],
+            ['Master array dibaca langsung (push = muncul di daftar)', () => { const src = MASTER.slice(); const i = make(); OnvTagsInput.init(i, { source: src }); src.push({ value: 7, label: 'Bogor' }); type(i, 'bog'); key(i, 'Enter'); leave(i); return i.value; }, '7'],
+            ['Class input pindah ke wrapper', () => { const i = make(); i.className = 'form-control'; OnvTagsInput.init(i); return i.parentNode.className + '|' + i.hidden; }, 'onvs-tagsinput form-control|true'],
+            ['URL: hasil fetch bisa dipilih, teks lain ditolak', async () => {
+                const real = window.fetch;
+                window.fetch = (url) => Promise.resolve({ json: () => Promise.resolve({ data: MASTER.filter(m => m.label.toLowerCase().includes(decodeURIComponent(url.split('q=')[1]))) }) });
+                const i = make();
+                OnvTagsInput.init(i, { source: '/api/kota?q=' });
+                type(i, 'cai');
+                await wait(350);
+                key(i, 'Enter');
+                type(i, 'Bogor');
+                await wait(350);
+                key(i, 'Enter');
+                leave(i);
+                window.fetch = real;
+                return i.value + '|' + chips(i).join();
+            }, '9|Cairo']
+        ];
+
+        (async () => {
+            let fails = 0;
+            const list = document.getElementById('checks');
+            for (const [name, fn, expected] of cases) {
+                let got;
+                try { got = await fn(); } catch (e) { got = 'ERROR ' + e.message; }
+                const ok = got === expected;
+                if (!ok) fails++;
+                const row = document.createElement('div');
+                row.className = ok ? 'ok' : 'fail';
+                row.textContent = (ok ? 'OK' : 'GAGAL') + ' — ' + name + '  =>  ' + JSON.stringify(got) + (ok ? '' : '   (harusnya: ' + JSON.stringify(expected) + ')');
+                list.appendChild(row);
+            }
+            document.getElementById('summary').textContent = fails ? fails + ' dari ' + cases.length + ' cek GAGAL' : 'Semua ' + cases.length + ' cek OK';
+            console.log(document.getElementById('summary').textContent);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+/* ============================================================
+   ONVSHARK TAGS INPUT
+   Author  : Refael Sinaga 2026 | refaelsinaga.com
+   Version : 1.1.0
+   Prefix  : onvs-tagsinput-
+   ============================================================ */
+
+/* Border, padding, warna kotak ikut class asli input (mis. form-control) yang dipindah ke wrapper.
+   Chip dan daftar pilihan diatur lewat CSS variable --onvs-tagsinput-* (override di project masing-masing) */
+.onvs-tagsinput {
+    --onvs-tagsinput-tag-bg: #5bc0de;
+    --onvs-tagsinput-tag-text: #fff;
+    --onvs-tagsinput-tag-radius: 4px;
+    --onvs-tagsinput-list-bg: #fff;
+    --onvs-tagsinput-list-border: #d0d5dd;
+    --onvs-tagsinput-list-hover: #e9ecf2;
+    --onvs-tagsinput-muted: #98a2b3;
+    --onvs-tagsinput-tag-new-bg: #f79009;
+    --onvs-tagsinput-create-text: #1a4099;
+
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    height: auto;
+    cursor: text;
+    text-align: left;
+}
+
+/* Tanpa class tema: tampilan dasar */
+.onvs-tagsinput-plain {
+    box-sizing: border-box;
+    padding: 4px 6px;
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.onvs-tagsinput-plain:focus-within {
+    border-color: #1a4099;
+}
+
+/* all: unset supaya style input/tombol dari Bootstrap, Tailwind, dll tidak ikut masuk */
+.onvs-tagsinput-field,
+.onvs-tagsinput-remove {
+    all: unset;
+    box-sizing: border-box;
+}
+
+.onvs-tagsinput-field {
+    flex: 1 1 80px;
+    min-width: 80px;
+    padding: 2px 0;
+    font: inherit;
+    color: inherit;
+}
+
+.onvs-tagsinput-field::placeholder {
+    color: var(--onvs-tagsinput-muted);
+}
+
+.onvs-tagsinput-tag {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    padding: 2px 4px 2px 8px;
+    border-radius: var(--onvs-tagsinput-tag-radius);
+    background: var(--onvs-tagsinput-tag-bg);
+    color: var(--onvs-tagsinput-tag-text);
+    font-size: .85em;
+    font-weight: 600;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+/* Tag baru (creatable): belum ada di daftar, dibedakan warnanya */
+.onvs-tagsinput-tag-new {
+    background: var(--onvs-tagsinput-tag-new-bg);
+}
+
+.onvs-tagsinput-remove {
+    margin-left: 4px;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-size: 1.1em;
+    line-height: 1;
+    cursor: pointer;
+    opacity: .8;
+}
+
+.onvs-tagsinput-remove:hover,
+.onvs-tagsinput-remove:focus-visible {
+    opacity: 1;
+    background: rgba(0, 0, 0, .15);
+}
+
+.onvs-tagsinput-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    max-height: 220px;
+    margin: 2px 0 0;
+    padding: 4px 0;
+    overflow-y: auto;
+    list-style: none;
+    border: 1px solid var(--onvs-tagsinput-list-border);
+    border-radius: 6px;
+    background: var(--onvs-tagsinput-list-bg);
+    color: #1d2433;
+    box-shadow: 0 6px 16px rgba(16, 24, 40, .12);
+    font-size: 14px;
+    cursor: default;
+}
+
+.onvs-tagsinput-list[hidden] {
+    display: none;
+}
+
+.onvs-tagsinput-item,
+.onvs-tagsinput-empty {
+    padding: 6px 10px;
+}
+
+.onvs-tagsinput-item {
+    cursor: pointer;
+}
+
+.onvs-tagsinput-active {
+    background: var(--onvs-tagsinput-list-hover);
+}
+
+.onvs-tagsinput-empty {
+    color: var(--onvs-tagsinput-muted);
+}
+
+/* Pilihan "+ Tambah ..." (creatable) */
+.onvs-tagsinput-create {
+    color: var(--onvs-tagsinput-create-text);
+    font-weight: 600;
+}
