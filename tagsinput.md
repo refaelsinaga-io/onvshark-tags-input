@@ -199,7 +199,6 @@ Efek fokus: input asli disembunyikan, jadi `.form-control:focus` tema tidak kena
 | `tagsinput.js`   | Library |
 | `tagsinput.md`   | Dokumentasi ini |
 | `index.html`     | Contoh pemakaian |
-| `test.html`      | Cek otomatis, harus tampil "Semua 24 cek OK" |
 
 ---
 

@@ -98,7 +98,6 @@ See `tagsinput.md` for the full list (Indonesian docs).
 | `tagsinput.js`  | Library |
 | `tagsinput.md`  | Full documentation (Indonesian) |
 | `index.html`    | Demo |
-| `test.html`     | Automated checks, should show "Semua 24 cek OK" |
 
 ---
 
